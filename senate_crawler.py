@@ -109,7 +109,7 @@ def search_documents():
 
     disclosure_links = []
 
-    disclosures = load_json(path="./data/disclosures/senate.json")['disclosures']
+    disclosures = load_json(path="./data/parsed_disclosures/senate.json")['disclosures']
     existing_records = [disc['doc_id'] for disc in disclosures]
 
     while True:
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     update_token()
     disclosure_links = search_documents()
 
-    existing_disclosures = load_json(path="./data/disclosures/senate.json")["disclosures"]
+    existing_disclosures = load_json(path="./data/parsed_disclosures/senate.json")["disclosures"]
 
     disclosures = []
     for i, _ in enumerate(disclosure_links):
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     print(f"ALERT: The dataset now has {len(existing_disclosures)} disclosure records.\n")
 
     save_data = {"disclosures": existing_disclosures}
-    write_json(data=save_data, path="./data/disclosures/senate.json")
+    write_json(data=save_data, path="./data/parsed_disclosures/senate.json")
     print(f"- - DATA WAS SAVED TO JSON - -\n")
 
 

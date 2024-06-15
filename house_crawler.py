@@ -8,7 +8,6 @@ import os
 import yfinance as yf
 import xml.etree.ElementTree as ET
 import requests
-import PyPDF2
 import pdfplumber
 from pprint import pprint
 
@@ -153,8 +152,8 @@ if __name__ == "__main__":
     # Initialize stocks history tracker.
     stock_tracker = StockHistory(start_date="2012-01-01", end_date="2024-06-01")
 
-    parsed_disclosures = load_json(path="./data/disclosures/house.json")['disclosures']
-    failures = load_json(path="./data/disclosures/failures.json")['failures']
+    parsed_disclosures = load_json(path="./data/parsed_disclosures/house.json")['disclosures']
+    failures = load_json(path="./data/parsed_disclosures/failures.json")['failures']
 
     new_disclosures = []
 
@@ -275,10 +274,10 @@ if __name__ == "__main__":
     parsed_disclosures = sort_by_date(disclosures=parsed_disclosures)
     print(f"Total Transactions: {len(parsed_disclosures)}\n")
 
-    save_path = "./data/disclosures/house.json"
+    save_path = "./data/parsed_disclosures/house.json"
     save_data = {'disclosures': parsed_disclosures}
     write_json(data=save_data, path=save_path)
     print(f"Data saved to '{save_path}'.")
 
     # Record failed documents
-    write_json(data={'failures': failures}, path=f"./data/disclosures/failures.json")
+    write_json(data={'failures': failures}, path=f"./data/parsed_disclosures/failures.json")
