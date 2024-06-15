@@ -1,0 +1,33 @@
+# Instructions: 
+1. Convert the information in the "Financial Disclosure" section into a json with the following format:
+{
+	"disclosures": [
+		{
+			"asset_name": 'asset name goes here (str)',
+			"transaction": 'the transaction type. enums: "sale", "purchase" (str)',
+			"share_count": 'total number of shares purchased or sold (int)',
+			"options_count": 'total numbers of options purchased or sold (int)'
+			"option_type": 'enums: "call", "put" (str)',
+			"option_activity": 'enums: "sell", "purchase", "excercise" (str)',
+			"option_exp_date": 'the expiration date of the option (format date as '%Y-%m-%d')',
+			"strike_price": 'strike price for an option if known (float)',
+			"ticker": 'stock ticker symbol goes here (str)',
+			"transaction_date": 'transaction date goes here (format date as '%Y-%m-%d')',
+			"notification_date": 'notification date goes here (format date as '%Y-%m-%d')',
+			"asset_value_low": 'the low end of the asset value dollar amount range (int)',
+			"asset_value_high": 'the high end of the asset value dollar amount range (int)'
+			"description": 'description goes here (str)',
+			"asset_code": 'asset code here (str)',
+		},
+		...
+	]
+}
+2. Any fields that are not applicable should be set to null. (E.g. option_type is only applicable to options, etc.).
+3. Note: The asset_codes are usually in square brackets with enums: 4K, 5C, 5F, 5P, AB, BA, BK, CO, CS, CT, DB, DO, DS, EF, EQ, ET, FA, FE, FN, FU, GS, HE, HN, IC, IH, IP, IR, MA, MF, MO, OI, OL, OP, OT, PE, PM, PS, RE, RP, RS, SA, ST, TR, VA, VI, WU
+4. Note: The transaction type in the disclosure is denoted either "S" for "sale" or "P" for purchase.
+5. If the asset_code is "SP", set the asset code to "ST" if the asset is a stock, or "OP" if the asset is an option.
+6. Make sure to convert the dates from mm/dd/yyyy format to %Y-%m-%d format.
+7. If the number of shares are not disclosed for an options disclosure, the number of shares is 100 times the number of options.
+
+# Financial Disclosure:
+FINANCIAL_DISCLOSURE

@@ -1,0 +1,11 @@
+__pycache__
+*/__pycache__
+venv
+.env
+.DS_Store
+.ipynb_checkpoints
+data/clerk_house/*.txt
+data/clerk_house/*.xml
+data/documents/*.pdf
+test.ipynb
+junk.ipynb
