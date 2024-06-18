@@ -2,8 +2,14 @@ from pprint import pprint
 from datetime import datetime, timedelta
 import copy
 import statistics
-from sklearn.model_selection import train_test_split
 import json
+
+from tqdm.auto import tqdm
+import pandas as pd
+import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from .date_tools import days_ago, days_from_date
 from .tradertrack import TraderTracker
@@ -11,9 +17,6 @@ from .stockmarket import StockHistory
 from .util import write_json
 from .models.models import model_predict
 from .stats import normalize
-
-import pandas as pd
-import tqdm
 
 def load_json_metrics():
     file_path = "./data/training_data/trading_metrics.json"
@@ -63,13 +66,13 @@ def calculate_score(disclosure: dict):
 
     """
     weights = {
-        "purchase_volume": 2,
+        "adjusted_purchase_volume": 2,
         "purchase_speculation": 1,
         "purchase_count": 1,
         "purchase_count_individual": 1,
         "purchase_days_ago": 1,
         "purchase_confidence": 1,
-        "sale_volume": 2,
+        "adjusted_sale_volume": 2,
         "sale_speculation": 1,
         "sale_count": 1,
         "sale_count_individual": 1,
@@ -77,8 +80,8 @@ def calculate_score(disclosure: dict):
         "sale_confidence": 1
     }
 
-    purchase_keys = ["purchase_volume", "purchase_speculation", "purchase_count", "purchase_count_individual"]
-    sale_keys = ["sale_volume", "sale_speculation", "sale_count", "sale_count_individual"]
+    purchase_keys = ["adjusted_purchase_volume", "purchase_speculation", "purchase_count", "purchase_count_individual"]
+    sale_keys = ["adjusted_sale_volume", "sale_speculation", "sale_count", "sale_count_individual"]
 
     purchase_values = [disclosure[key]*weights[key] for key in purchase_keys if disclosure[key] is not None]
     sale_values = [disclosure[key]*weights[key] for key in sale_keys if disclosure[key] is not None]
@@ -203,7 +206,7 @@ class AssetTracker:
     """The AssetTracker class is used to analyze the performance of congress members in the stock market.
     """
     def __init__(self):
-        self.stock_history = StockHistory(start_date="2012-01-01", end_date=datetime.now().date().strftime("%Y-%m-%d"))
+        self.stock_history = StockHistory(start_date="2012-01-01")
 
     def analysis(self, disclosures: list, end_date: datetime):
         """Analyze the performance of congress members in the stock market.
@@ -247,14 +250,16 @@ class AssetTracker:
         for stock in stocks:
             tracker[stock] = {
                 'ticker': stock,
-                'purchase_volume': 0,
+                'adjusted_purchase_volume': 0,
+                'estimated_purchase_volume': 0,
                 'purchase_speculation': 0,
                 'purchase_count': 0,
                 'purchase_count_individual': 0,
                 'purchase_days_ago': [],
                 'purchase_owner': [],
                 'purchase_confidence': [],
-                'sale_volume': 0,
+                'adjusted_sale_volume': 0,
+                'estimated_sale_volume': 0,
                 'sale_speculation': 0,
                 'sale_count': 0,
                 'sale_count_individual': 0,
@@ -277,6 +282,7 @@ class AssetTracker:
 
             # Retrieve the trader's individual stock trading performance.
             owner_confidence = trade_tracker.trader_performance(name=owner)
+            estimated_volume = (disclosure['asset_value_high'] + disclosure['asset_value_low']) / 2
 
             # Get the number of days ago the transaction occurred.
             transaction_date = disclosure['transaction_date']
@@ -285,14 +291,16 @@ class AssetTracker:
             # Process record if trader's asset is a stock.
             if disclosure['asset_code'] == "ST":
                 if disclosure['transaction'] == "purchase":
-                    tracker[disclosure['ticker']]['purchase_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['adjusted_purchase_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['estimated_purchase_volume'] += estimated_volume
                     tracker[disclosure['ticker']]['purchase_count'] += 1
                     tracker[disclosure['ticker']]['purchase_owner'].append(owner)
                     tracker[disclosure['ticker']]['purchase_days_ago'].append(transaction_days_ago)
                     if owner_confidence:
                         tracker[disclosure['ticker']]['purchase_confidence'].append(owner_confidence['purchase'])
                 else:
-                    tracker[disclosure['ticker']]['sale_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['adjusted_sale_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['estimated_sale_volume'] += estimated_volume
                     tracker[disclosure['ticker']]['sale_count'] += 1
                     tracker[disclosure['ticker']]['sale_owner'].append(owner)
                     tracker[disclosure['ticker']]['sale_days_ago'].append(transaction_days_ago)
@@ -308,7 +316,8 @@ class AssetTracker:
 
                 if speculation_score < 0:
                     # Owner is betting against the stock price falling
-                    tracker[disclosure['ticker']]['sale_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['adjusted_sale_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['estimated_sale_volume'] += estimated_volume
                     tracker[disclosure['ticker']]['sale_count'] += 1
                     tracker[disclosure['ticker']]['sale_speculation'] += abs(speculation_score)
                     tracker[disclosure['ticker']]['sale_days_ago'].append(transaction_days_ago)
@@ -316,7 +325,8 @@ class AssetTracker:
                         tracker[disclosure['ticker']]['sale_confidence'].append(owner_confidence['sale'])
                 else:
                     # Owner is betting on the stock price growing
-                    tracker[disclosure['ticker']]['purchase_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['adjusted_purchase_volume'] += disclosure['adjusted_value']
+                    tracker[disclosure['ticker']]['estimated_purchase_volume'] += estimated_volume
                     tracker[disclosure['ticker']]['purchase_count'] += 1
                     tracker[disclosure['ticker']]['purchase_speculation'] += abs(speculation_score)
                     tracker[disclosure['ticker']]['purchase_days_ago'].append(transaction_days_ago)
@@ -353,19 +363,19 @@ class AssetTracker:
             # Calculate total number of individuals that transacted the stock / option asset.
             results[i]['purchase_count_individual'] = len(results[i]['purchase_owner'])
             results[i]['sale_count_individual'] = len(results[i]['sale_owner'])
-            results[i]['volume_net'] = results[i]['purchase_volume'] - results[i]['sale_volume'] 
+            results[i]['volume_net'] = results[i]['estimated_purchase_volume'] - results[i]['estimated_sale_volume'] 
 
         final_results = [result for result in results if result['purchase_owner'] or result['sale_owner']]
 
         return final_results
 
-def rank_stocks(disclosures:list, end_date:datetime, mode:str='run'):
+def rank_stocks(disclosures:list, end_date:datetime, mode:str='run', refresh_train: bool=False):
     asset_tracker = AssetTracker()
 
-    if mode=='data':
+    if refresh_train:
         trading_metrics = []
         # Collect data for training the model
-        date = datetime(2017, 1, 1)
+        date = datetime(2013, 1, 1)
         while date < (datetime.now() - timedelta(days=372)):
             print(f"Collecting data for {end_date.strftime('%Y-%m-%d')}")
             results = asset_tracker.analysis(copy.deepcopy(disclosures), date)
@@ -377,25 +387,94 @@ def rank_stocks(disclosures:list, end_date:datetime, mode:str='run'):
 
             trading_metrics.extend(results)
             date = date + timedelta(days=60)
+        
+        df = pd.DataFrame(trading_metrics)
+        stock_history = asset_tracker.stock_history
+        deltas = []
+        
+        # Add price deltas to the dataframe
+        for i,row in tqdm(df.iterrows(), total=len(df)):
+            date = row['date']
+            future_date = days_from_date(date_str=date, days=365)
+            current_price = stock_history.price(ticker=row['ticker'], date_str=date)
+            future_price = stock_history.price(ticker=row['ticker'], date_str=future_date)
 
-        try:
-            # Rank top stocks by top score.
-            trading_metrics = sorted(trading_metrics, key=lambda x: x["score"], reverse=True)
-        except:
-            pass
+            try:
+                price_change = future_price / current_price
+                price_change = round(price_change, 2)
+                deltas.append(price_change)
+            except:
+                deltas.append(None)
 
-        # Save training data to file.
-        trading_metrics = {"scoring_metrics": trading_metrics}
-        write_json(data=trading_metrics, path="./data/training_data/trading_metrics.json")
+        # Remove any None values from the deltas
+        df['price_change'] = deltas
+        df = df.dropna(subset=['price_change']).reset_index(drop=True)
 
-    elif mode == 'test':
-        df = pd.read_csv('./data/disclosures/stock_metrics.csv')
-        data = df.to_dict(orient='records')
+        df['sale_days_ago'] = df['sale_days_ago'].fillna(-1)
+        df['purchase_days_ago'] = df['purchase_days_ago'].fillna(-1)
+        
+        save_path = './data/training_data/stock_metrics.csv'
+        df.to_csv(save_path, index=False)
+        print(f"Data was saved to '{save_path}'.")
 
-        y_pred = model_predict(records=data)
-        print(y_pred)
+    if mode == 'train':
+        # Load the training data and split it into features and target
+        df = pd.read_csv('./data/training_data/stock_metrics.csv') 
 
-    else:
+        # df['date'] = pd.to_datetime(df['date'])
+        # end_date = pd.Timestamp('2023-01-01')
+        # df = df[df['date'] < end_date]
+
+        # Define features and target
+        x = df.drop(columns=['date', 'purchase_owner', 'sale_owner', 'sale_speculation', 'purchase_speculation', 'price_change'])
+        y = df['price_change']
+
+        # Split the data into training and testing sets
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+
+        tickers = x_test['ticker']
+
+        x_train = x_train.drop(columns=['ticker'])
+        x_test = x_test.drop(columns=['ticker'])
+
+        # Initialize the model
+        gbr = GradientBoostingRegressor(random_state=42)
+
+        # Fit the model to the training data
+        gbr.fit(x_train, y_train)
+
+        # Make predictions on the test set
+        y_pred = gbr.predict(x_test)
+
+        # Calculate Mean Squared Error
+        mae = mean_absolute_error(y_test, y_pred)
+        mse = mean_squared_error(y_test, y_pred)
+        print(f"Mean Absolute Error: {mae}")
+        print(f"Mean Squared Error: {mse}")
+
+        predictions = x_test
+        predictions['ticker'] = tickers
+        predictions['prediction_growth'] = y_pred
+        predictions['actual_growth'] = y_test
+
+        predictions = predictions.sort_values(by='prediction_growth', ascending=False)
+        predictions = predictions.reset_index()
+
+        top_ten = predictions.head(10)
+        for i,item in top_ten.iterrows():
+            print(f"Rank {i+1}: {item['ticker']}")
+            print(f"Prediction: {round(item['prediction_growth'], 2)}")
+            print(f"Actual: {item['actual_growth']}")
+            print('')
+
+        save = input(f"The MAE is {round(mae, 2)}. Do you want to save the model? (y/n): ")
+        if save.strip() == 'y':
+            model_path = './src/models/pretrained_models/gradient_boosting_regressor.joblib'
+            joblib.dump(gbr, model_path)
+            print(f"Model saved to '{model_path}'")
+
+
+    elif mode == 'run':
         # Calculating trading metrics for each stock.
         results = asset_tracker.analysis(copy.deepcopy(disclosures), end_date)
 

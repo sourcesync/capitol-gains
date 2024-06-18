@@ -117,9 +117,10 @@ def get_document(year, doc_id):
     path = f"./data/documents/{doc_id}.pdf"
 
     # https://disclosures-clerk.house.gov/public_disc/financial-pdfs/2023/30019781.pdf
-    # https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2023/20023083.pdf
+    # https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2019/20011279.pdf
     # Download the pdf if it does not already exist
     if not os.path.exists(path):
+        # Download the disclosure
         url = f"https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/{year}/{doc_id}.pdf"
         response = requests.get(url)
 
@@ -140,6 +141,7 @@ def get_document(year, doc_id):
     if check_valid_pdf(path=path):
         text = extract_text_from_pdf(file_path=path)
         return text, path
+
     else:
         print(f"\nInvalid PDF: {year} Doc ID #{doc_id} is a scanned PDF.")
         if os.path.exists(path):
@@ -150,7 +152,7 @@ def get_document(year, doc_id):
 
 if __name__ == "__main__":
     # Initialize stocks history tracker.
-    stock_tracker = StockHistory(start_date="2012-01-01", end_date="2024-06-01")
+    stock_tracker = StockHistory(start_date="2012-01-01")
 
     parsed_disclosures = load_json(path="./data/parsed_disclosures/house.json")['disclosures']
     failures = load_json(path="./data/parsed_disclosures/failures.json")['failures']
@@ -160,8 +162,8 @@ if __name__ == "__main__":
     # Assign years to collect data for.
     print('Starting data collection...')
 
-
-    years = range(2019, 2024)#[2024]
+    current_year = datetime.now().year + 1
+    years = range(2019, current_year)#[2024]
     for year in years:
         document_path = f"./data/clerk_house/{year}FD.xml"
         if not os.path.exists(document_path) or (year == datetime.now().year):
@@ -260,9 +262,9 @@ if __name__ == "__main__":
                 disclosure["governing_body"] = "HOUSE"
 
                 if disclosure['ticker']:
-                    print(f'Owner: {disclosure["first_name"]}{ disclosure["last_name"]}')
-                    print(f"Asset: {disclosure['asset_type']}")
+                    print(f'Owner: {disclosure["first_name"]} { disclosure["last_name"]}')
                     print(f"Ticker: {disclosure['ticker']}")
+                    print(f"Transaction: {disclosure['transaction']}")
                     print(f"Price: ${disclosure['stock_price']}")
                     print(f"Date: {disclosure['transaction_date']}\n")
                     new_disclosures.append(disclosure)

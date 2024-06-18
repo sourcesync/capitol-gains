@@ -112,6 +112,7 @@ def search_documents():
     disclosures = load_json(path="./data/parsed_disclosures/senate.json")['disclosures']
     existing_records = [disc['doc_id'] for disc in disclosures]
 
+    page = 1
     while True:
         payload = {
             "draw": draw,
@@ -131,7 +132,7 @@ def search_documents():
             "search": {"value": "", "regex": False},
             "report_types": "[11]",
             "filer_types": "[1]",
-            "submitted_start_date": "01/01/2024 00:00:00",
+            "submitted_start_date": "01/01/2012 00:00:00",
             "submitted_end_date": "",
             "candidate_state": "",
             "senator_state": "",
@@ -143,7 +144,7 @@ def search_documents():
         post_url = "https://efdsearch.senate.gov/search/report/data/"
         response = session.post(post_url, headers=headers, data=payload)
 
-        print("Status Code:", response.status_code)
+        print(f"Parsing Results Page: {page}, Status Code: {response.status_code}")
         html = response.text
         soup = BeautifulSoup(html, "html.parser")
 
@@ -253,7 +254,7 @@ if __name__ == "__main__":
 
     print(f"{len(disclosures)} disclosures collected.")
 
-    stock_tracker = StockHistory(start_date="2012-01-01", end_date="2024-06-01")
+    stock_tracker = StockHistory(start_date="2012-01-01")
     senate_trades = []
     for i, _ in enumerate(disclosures):
         print(f"Processing Disclosure: {i}/{len(disclosures)}")
@@ -343,8 +344,14 @@ if __name__ == "__main__":
             "asset_type": disclosure['Asset Type'],
             "stock_price": disclosure['stock_price'],
             "governing_body": "SENATE",
-            #"owner": disclosure['Owner'],
         }
+
+        if record['ticker']:
+            print(f'Owner: {record["first_name"]} { record["last_name"]}')
+            print(f"Ticker: {record['ticker']}")
+            print(f"Transaction: {record['transaction']}")
+            print(f"Price: ${record['stock_price']}")
+            print(f"Date: {record['transaction_date']}\n")
         disclosures.append(record)
 
     

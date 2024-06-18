@@ -11,8 +11,9 @@ def clean_input(records:list[dict]):
     df['purchase_days_ago'] = df['purchase_days_ago'].fillna(-1)
 
     # Create binary features for purchase and sale occurrence
-    df['purchase_occurred'] = (df['purchase_days_ago'] != -1).astype(int)
-    df['sale_occurred'] = (df['sale_days_ago'] != -1).astype(int)
+    # df['purchase_occurred'] = (df['purchase_days_ago'] != -1).astype(int)
+    # df['sale_occurred'] = (df['sale_days_ago'] != -1).astype(int)
+    
     # Define features and target
     x = df.drop(columns=['date', 'purchase_owner', 'sale_owner', 'sale_speculation', 'purchase_speculation', 'ticker'])
     try: 
