@@ -79,6 +79,7 @@ def calculate_score(disclosure: dict):
         "sale_days_ago": 1,
         "sale_confidence": 1
     }
+    pprint(disclosure, '\n')
 
     purchase_keys = ["adjusted_purchase_volume", "purchase_speculation", "purchase_count", "purchase_count_individual"]
     sale_keys = ["adjusted_sale_volume", "sale_speculation", "sale_count", "sale_count_individual"]
@@ -282,7 +283,10 @@ class AssetTracker:
 
             # Retrieve the trader's individual stock trading performance.
             owner_confidence = trade_tracker.trader_performance(name=owner)
+
+            # Calculate the estimated volume of the transaction.
             estimated_volume = (disclosure['asset_value_high'] + disclosure['asset_value_low']) / 2
+            estimated_volume = round(estimated_volume, 2)
 
             # Get the number of days ago the transaction occurred.
             transaction_date = disclosure['transaction_date']
@@ -483,35 +487,35 @@ def rank_stocks(disclosures:list, end_date:datetime, mode:str='run', refresh_tra
         for i, _ in enumerate(normalized_data):
             results[i]['score'] = calculate_score(disclosure=normalized_data[i])
 
-        predictions = model_predict(records=copy.deepcopy(results))
+        # predictions = model_predict(records=copy.deepcopy(results))
 
-        for i, prediction in enumerate(predictions):
-            results[i]['prediction'] = prediction
+        # for i, prediction in enumerate(predictions):
+        #     results[i]['prediction'] = prediction
 
         # Rank top stocks by score.
-        top_buys = sorted(results, key=lambda x: x["prediction"], reverse=True)
-        top_sells = sorted(results, key=lambda x: x["prediction"], reverse=False)
+        top_buys = sorted(results, key=lambda x: x["score"], reverse=True)
+        top_sells = sorted(results, key=lambda x: x["score"], reverse=False)
 
         print('- - TOP BUYS OVERALL - -')
-        for stock in top_buys[:10]:
+        for stock in top_buys[:5]:
             print(f"Ticker: {stock['ticker']}")
-            print(f"Prediction: {stock['prediction']}")
+            #print(f"Prediction: {stock['prediction']}")
             print(f"Score: {stock['score']}")
             print(f"Purchase Confidence: {stock['purchase_confidence']}")
-            print(f"Purchase Volume: ${stock['purchase_volume']}")
-            print(f"Sale Volume: ${stock['sale_volume']}")
+            print(f"Purchase Volume: ${stock['estimated_purchase_volume']}")
+            print(f"Sale Volume: ${stock['estimated_sale_volume']}")
             print(f"Buyers: {stock['purchase_owner']}")
             print('')
         print('')
 
         print('- - TOP SELLS OVERALL - -')
-        for stock in top_sells[:10]:
+        for stock in top_sells[:5]:
             print(f"Ticker: {stock['ticker']}")
-            print(f"Prediction: {stock['prediction']}")
+            #print(f"Prediction: {stock['prediction']}")
             print(f"Score: {stock['score']}")
             print(f"Sale Confidence: {stock['sale_confidence']}")
-            print(f"Purchase Volume: ${stock['purchase_volume']}")
-            print(f"Sale Volume: ${stock['sale_volume']}")
+            print(f"Purchase Volume: ${stock['estimated_purchase_volume']}")
+            print(f"Sale Volume: ${stock['estimated_sale_volume']}")
             print(f"Sellers: {stock['sale_owner']}")
             print('')
         print('')

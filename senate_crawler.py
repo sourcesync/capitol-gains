@@ -112,8 +112,9 @@ def search_documents():
     disclosures = load_json(path="./data/parsed_disclosures/senate.json")['disclosures']
     existing_records = [disc['doc_id'] for disc in disclosures]
 
-    page = 1
+    page = 0
     while True:
+        page += 1
         payload = {
             "draw": draw,
             "columns": [
@@ -141,17 +142,21 @@ def search_documents():
             "last_name": "",
         }
 
+        # Make post request to Senate Disclosures API
         post_url = "https://efdsearch.senate.gov/search/report/data/"
         response = session.post(post_url, headers=headers, data=payload)
+        print(f"Parsing Page #{page} of results - Status Code: {response.status_code}")
 
-        print(f"Parsing Results Page: {page}, Status Code: {response.status_code}")
+        # Get page as text and parse data with BeautifulSoup
         html = response.text
         soup = BeautifulSoup(html, "html.parser")
 
         json_data = response.json()
-
         data = json_data["data"]
         max_results = json_data["recordsTotal"]
+
+        
+
 
         for row in data:
             a_tag = row[3]
