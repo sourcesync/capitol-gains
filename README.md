@@ -1,7 +1,9 @@
 # Capitol Gains
 
 ## Description
-Capitol Gains is a a suite of tools for downloading, parsing, and analyzing US Congress stock market trades dating back to 2012. Due to the 2012 STOCK Act, members of US Congress are required by law to disclose their stock trades within 45 days of a transaction worth over $1,000. This data is publically available for the House of Representatives at [House of Representative Finanacial Disclosure Reports](https://disclosures-clerk.house.gov/FinancialDisclosure) and for the Senate at [US Senate Select Committee on Ethics](https://efdsearch.senate.gov/search/home/).
+Capitol Gains is a a suite of tools for downloading, parsing, and analyzing US Congress stock market trades dating back to 2012. Due to the 2012 STOCK Act, members of US Congress are required by law to disclose their stock trades within 45 days of a transaction worth over $1,000. 
+
+This data is publically available for the House of Representatives at [House of Representative Finanacial Disclosure Reports](https://disclosures-clerk.house.gov/FinancialDisclosure) and for the Senate at [US Senate Select Committee on Ethics](https://efdsearch.senate.gov/search/home/).
 
 ## Installation
 1. Create a Python virtual environment and install dependencies:
@@ -23,6 +25,7 @@ The code is broken up into a few different tools for collecting and analyzing th
     -  This script has tools for ranking stocks based on congress stock trades / transaction metrics. 
 - **src/tradertrack.py:**
     - This script has tools for tracking the trading performance of individual members of congress.
+    - Specifically, this tool is used to track the average 1-year return on investment by individual members of congress based on their trading history.
 - **src/stockmarket.py:**
     - This script has tools for retrieving historical stock prices.
 
