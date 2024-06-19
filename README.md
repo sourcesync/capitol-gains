@@ -11,9 +11,18 @@ Capitol Gains is a a suite of tools for downloading, parsing, and analyzing US C
 
 ## Usage
 The code is broken up into a few different tools for collecting and analyzing the Congress stock trading data:
-    - house_crawler.py: This script is used to download and parse the most up to date and available stock trades from the US House of Representatives. The data is saved in json format inside of the './data/parsed_disclosures/' directory as 'house.json'.
-    - senate_crawler.py: This script is used to download and parse the most up to date and available stock trades from the US Senate. The data is saved in json format inside of the './data/parsed_disclosures/' directory as 'senate.json'.
-    - src/scoring.py: This script has tools for ranking stocks based on transaction metrics. 
-    - src/tradertrack.py: This script has tools for tracking the trading performance of individual members of congress.
-    - src/stockmarket.py: This script has tools for retrieving historical stock prices.
+- **house_crawler.py:**
+    - This script is used to download and parse the most up to date and available stock trades from the US House of Representatives. The data is saved in json format inside of the './data/parsed_disclosures/' directory as 'house.json'.
+    - **Run:** `python3 senate_crawler.py`
+        - Data is saved to ./data/parsed_disclosures/house.json
+- **senate_crawler.py:**
+    - This script is used to download and parse the most up to date and available stock trades from the US Senate. The data is saved in json format inside of the './data/parsed_disclosures/' directory as 'senate.json'.
+    - **Run:** `python3 senate_crawler.py`
+        - Data is saved to ./data/parsed_disclosures/senate.json
+- **src/scoring.py:**
+    -  This script has tools for ranking stocks based on congress stock trades / transaction metrics. 
+- **src/tradertrack.py:**
+    - This script has tools for tracking the trading performance of individual members of congress.
+- **src/stockmarket.py:**
+    - This script has tools for retrieving historical stock prices.
 
