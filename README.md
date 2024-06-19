@@ -6,10 +6,11 @@ Capitol Gains is a a suite of tools for downloading, parsing, and analyzing US C
 This data is publically available for the House of Representatives at [House of Representative Finanacial Disclosure Reports](https://disclosures-clerk.house.gov/FinancialDisclosure) and for the Senate at [US Senate Select Committee on Ethics](https://efdsearch.senate.gov/search/home/).
 
 ## Installation
-1. Create a Python virtual environment and install dependencies:
-    - `python3 -m venv venv` (create virtual env)
-    - `source venv/bin/activate` (activate env)
-    - `pip3 install -r requirements.txt` (install python dependencies)
+1. Clone the repository to your computer.
+2. Create a Python virtual environment and install dependencies from the `requirements.txt` file:
+    - **Create Virtual Environment:** `python3 -m venv venv`
+    - **Activate Virtual Environment:** `source venv/bin/activate`
+    - **Install Python Dependencies:** `pip3 install -r requirements.txt`
 
 ## Usage
 The code is broken up into a few different tools for collecting and analyzing the Congress stock trading data:
@@ -28,4 +29,6 @@ The code is broken up into a few different tools for collecting and analyzing th
     - Specifically, this tool is used to track the average 1-year return on investment by individual members of congress based on their trading history.
 - **src/stockmarket.py:**
     - This script has tools for retrieving historical stock prices.
+- **xg_boost.ipynb:**
+    - This notebook has code for running and testing the XGBoost and hard-coded scoring algorithm on test data.
 
